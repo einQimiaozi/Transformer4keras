@@ -5,8 +5,7 @@
   - 根据下游任务可以在Transformer后接不同的net，但是不建议接太复杂
   - 也可以直接使用MultiHeadAttention后接下游任务
 # api
-  - Embedding(vocab_size, model_dim)(layers) 将上一层输入的单词token做embedding,type=layers,参数:vocab_size=单词数量|type=int model_dim=词嵌入维度|type=int
-  <br>
+  - Embedding(vocab_size, model_dim)(layers) 将上一层输入的单词token做embedding,type=layers,参数:vocab_size=单词数量|type=int model_dim=词嵌入维度|type=int<br>
   - PositionalEncoding(model_dim)(layers) 对上一层做位置编码,type=layers,参数:model_dim=词嵌入维度|type=int
   <br>
   - Add()[layers1,layers2]) 将layers1和layers2相加,type=layers,参数：None
