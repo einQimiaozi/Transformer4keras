@@ -90,7 +90,7 @@
             batch_size=batch_size, epochs=epochs, validation_split=0.2)
   ```
     
-  -2.使用Transformer训练imdb数据
+  - 2.使用Transformer训练imdb数据
     
   ```python
   vocab_size = 5000
