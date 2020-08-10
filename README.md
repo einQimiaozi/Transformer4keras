@@ -55,7 +55,7 @@
 # 案例
     
   - 1.使用MultiHeadAttention训练imdb数据
-  '''python
+  ```python
   vocab_size = 5000
   maxlen = 256
   model_dim = 512     # 词嵌入的维度
@@ -88,11 +88,11 @@
   print("Model Training ... ")
   model.fit(x_train, y_train,
             batch_size=batch_size, epochs=epochs, validation_split=0.2)
-  '''
+  ```
     
   -2.使用Transformer训练imdb数据
     
-  '''python
+  ```python
   vocab_size = 5000
   maxlen = 256
   model_dim = 512     # 词嵌入的维度
@@ -119,5 +119,5 @@
   print("Model Training ... ")
   model.fit(x_train, y_train,
             batch_size=batch_size, epochs=epochs, validation_split=0.2)
-  '''
+  ```
   
