@@ -74,7 +74,6 @@
   num_layers = 2
 
   # 读取imdb数据
-  print("Data downloading and pre-processing ... ")
   (x_train, y_train), (x_test, y_test) = imdb.load_data(maxlen=maxlen, num_words=vocab_size)
   x_train = sequence.pad_sequences(x_train, maxlen=maxlen)
   x_test = sequence.pad_sequences(x_test, maxlen=maxlen)
@@ -94,8 +93,9 @@
   model = Model(inputs=inputs, outputs=outputs)
   model.compile(optimizer=Adam(beta_1=0.9, beta_2=0.98, epsilon=1e-9),
                 loss='categorical_crossentropy', metrics=['accuracy'])
+                
   print(model.summary())
-  print("Model Training ... ")
+  
   model.fit(x_train, y_train,
             batch_size=batch_size, epochs=epochs, validation_split=0.2)
   ```
@@ -110,14 +110,12 @@
   epochs = 10
   num_layers = 2
 
-  print("Data downloading and pre-processing ... ")
   (x_train, y_train), (x_test, y_test) = imdb.load_data(maxlen=maxlen, num_words=vocab_size)
   x_train = sequence.pad_sequences(x_train, maxlen=maxlen)
   x_test = sequence.pad_sequences(x_test, maxlen=maxlen)
   y_train = to_categorical(y_train)
   y_test = to_categorical(y_test)
   
-  print('Model building ... ')
   inputs = Input(shape=(maxlen,),name="inputs")
   transformer = Transformer(num_layers=num_layers,vocab_size=vocab_size,heads=8,model_dim=model_dim,
                             drop_rate=0.2,units_dim=512,epsilon=0.001)(inputs)
@@ -125,8 +123,9 @@
   model = Model(inputs=inputs, outputs=outputs)
   model.compile(optimizer=RMSprop(learning_rate=4e-4),
                 loss='categorical_crossentropy', metrics=['accuracy'])
+                
   print(model.summary())
-  print("Model Training ... ")
+  
   model.fit(x_train, y_train,
             batch_size=batch_size, epochs=epochs, validation_split=0.2)
   ```
