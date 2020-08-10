@@ -43,10 +43,10 @@
   
   - 训练参数较多，强烈建议在程序开头设置
     
-  '''python
+  ```python
   import os
   os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
-  '''
+  ```
     
   - 任何显卡第一次都不要轻易将下游任务的batch_size设置超过32，一般从32开始试，如果训练比较轻松可以加大，显存爆炸则降低
     
