@@ -54,6 +54,16 @@
   
 # 案例
     
+  - 0.首先导入必要模块
+  ```python
+  from tensorflow.keras.datasets import imdb
+  from tensorflow.keras.preprocessing import sequence
+  from tensorflow.keras.utils import to_categorical
+  from tensorflow.keras.layers import Input, Dense,GlobalAveragePooling1D,Dropout
+  from tensorflow.keras.models import Model
+  from tensorflow.keras.optimizers import Adam,RMSprop
+  from Transformer import Transformer,MultiHeadAttention,Embedding,PositionalEncoding,Add
+  ```
   - 1.使用MultiHeadAttention训练imdb数据
   ```python
   vocab_size = 5000
