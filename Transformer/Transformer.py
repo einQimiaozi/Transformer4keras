@@ -11,6 +11,7 @@ from tensorflow.keras.layers import Dense, Dropout, GlobalAveragePooling1D
 所以代码中的所有embedding都代表的是一句话，而不是输入的整个语料库
 计算全部使用32位
 根据keras官方文档,build方法定义权重,call方法编写逻辑,compute_output_shape方法改变输入->输出张量的形状变化
+关于mask我要多说两句，原本我以为mask是直接形成下三角矩阵的，仔细看论文才发现，encoder中的mask其实就是padding，没有那么复杂，decoder里的mask才是下三角......
 '''
 
 # 词嵌入为3d张量
@@ -35,6 +36,12 @@ class Embedding(Layer):
         embedding = K.gather(self.embeddings,token)
         embedding = embedding*(self.model_dim**scale)
         return embedding
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'model_dim': self.model_dim,
+            'vocab_size' : self.vocab_size
+        })
     def compute_output_shape(self, input_shape):
         return input_shape + (self._model_dim,)
 
@@ -59,6 +66,11 @@ class PositionalEncoding(Layer):
         positional_encoding[:, 0::2] = np.sin(positional_encoding[:, 0::2])  # 用于偶数索引2i
         positional_encoding[:, 1::2] = np.cos(positional_encoding[:, 1::2])  # 用于奇数索引2i+1
         return K.cast(positional_encoding, 'float32')
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'mmodel_dim': self.model_dim,
+        })
     def compute_output_shape(self,input_shape):
         return input_shape
 
@@ -111,6 +123,12 @@ class ScaledDotProductAttention(Layer):
             matmul = self.sequence_mask(matmul)
         softmax_out = K.softmax(matmul)  # SoftMax层
         return K.batch_dot(softmax_out, values) # 最后乘V
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'masking_num': self.masking_num,
+        })
+        return config
     def compute_output_shape(self, input_shape):
         return input_shape
 
@@ -159,6 +177,13 @@ class MultiHeadAttention(Layer):
 
         outputs = tf.concat(tf.split(att_out, self.heads, axis=0), axis=2)
         return outputs
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'head_dim': self.head_dim,
+            'heads': self.heads,
+        })
+        return config
     def compute_output_shape(self, input_shape):
         return input_shape
 
@@ -170,12 +195,13 @@ class EncoderLayer(Layer):
     def __init__(self,heads=8,model_dim=512,units_dim=512,epsilon=0.001,drop_rate=0.2,**kwargs):
         self.heads = heads
         self.model_dim = model_dim
-        self.multi_head_attention = MultiHeadAttention(self.heads,model_dim=self.model_dim,mode="encoder")
+        self.multi_head_attention = MultiHeadAttention(self.heads,model_dim=model_dim,mode="encoder")
         self.ff_netword = FeedForwardNetwork(units_dim,model_dim)
         self.layer_norm1 = LayerNormalization(epsilon=epsilon)
         self.layer_norm2 = LayerNormalization(epsilon=epsilon)
         self.dropout1 = Dropout(drop_rate)
         self.dropout2 = Dropout(drop_rate)
+        self.dropout3 = Dropout(drop_rate)
         super(EncoderLayer, self).__init__(**kwargs)
     # traning是个bool
     def call(self,encodings,training=True):
@@ -186,8 +212,15 @@ class EncoderLayer(Layer):
         ffn_output = self.ff_netword(out1)
         ffn_output = self.dropout2(ffn_output,training=training)
         out2 = self.layer_norm2(out1 + ffn_output)
-
-        return out2
+        out3 = self.dropout3(out2)
+        return out3
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'model_dim': self.model_dim,
+            'heads': self.heads,
+        })
+        return config
     def compute_output_shape(self, input_shape):
         return input_shape
 
@@ -205,6 +238,7 @@ class DecoderLayer(Layer):
         self.dropout1 = Dropout(drop_rate)
         self.dropout2 = Dropout(drop_rate)
         self.dropout3 = Dropout(drop_rate)
+        self.dropout4 = Dropout(drop_rate)
         super(DecoderLayer,self).__init__(**kwargs)
     def call(self,encodings,encoder_outpus,training=True):
         attn_output1 = self.multi_head_attention1([encodings,encodings,encodings])
@@ -218,8 +252,16 @@ class DecoderLayer(Layer):
         ffn_output = self.ff_netword(out2)
         ffn_output = self.dropout3(ffn_output, training=training)
         out3 = self.layer_norm3(out2 + ffn_output)
+        out4 = self.dropout4(out3)
 
-        return out3
+        return out4
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'model_dim': self.model_dim,
+            'heads': self.heads,
+        })
+        return config
     def compute_output_shape(self, input_shape):
         return input_shape
 
@@ -242,6 +284,14 @@ class Encoder(Layer):
         for i in range(self.num_layers):
             outputs = self.enc_layers[i](outputs,training=training)
         return outputs
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'num_layers': self.num_layers,
+            'model_dim': self.model_dim,
+            'heads': self.heads,
+        })
+        return config
 
 class Decoder(Layer):
     def __init__(self,num_layers,vocab_size,heads=8,model_dim=512,drop_rate=0.2,units_dim=512,epsilon=0.001,**kwargs):
@@ -262,6 +312,14 @@ class Decoder(Layer):
         for i in range(self.num_layers):
             outputs = self.dec_layers[i](outputs,encoder_outputs,training=training)
         return outputs
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'num_layers': self.num_layers,
+            'model_dim': self.model_dim,
+            'heads': self.heads,
+        })
+        return config
 
 class Transformer(Layer):
     def __init__(self,num_layers,vocab_size,heads=8,model_dim=512,drop_rate=0.2,units_dim=512,epsilon=0.001,**kwargs):
@@ -276,5 +334,12 @@ class Transformer(Layer):
         decoder_outputs = self.decoder(inputs,encoder_outputs)
         outputs = self.output_layer(decoder_outputs)
         return outputs
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'encoder': self.encoder,
+            'decoder': self.decoder,
+        })
+        return config
     def compute_output_shape(self, input_shape):
         return (input_shape[0][0],input_shape[0][1],self._vocab_size)
