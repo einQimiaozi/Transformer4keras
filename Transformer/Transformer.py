@@ -37,11 +37,12 @@ class Embedding(Layer):
         embedding = embedding*(self.model_dim**scale)
         return embedding
     def get_config(self):
-        config = super().get_config().copy()
+        config = super().get_config()
         config.update({
             'model_dim': self.model_dim,
             'vocab_size' : self.vocab_size
         })
+        return config
     def compute_output_shape(self, input_shape):
         return input_shape + (self._model_dim,)
 
@@ -67,10 +68,11 @@ class PositionalEncoding(Layer):
         positional_encoding[:, 1::2] = np.cos(positional_encoding[:, 1::2])  # 用于奇数索引2i+1
         return K.cast(positional_encoding, 'float32')
     def get_config(self):
-        config = super().get_config().copy()
+        config = super().get_config()
         config.update({
             'mmodel_dim': self.model_dim,
         })
+        return config
     def compute_output_shape(self,input_shape):
         return input_shape
 
@@ -124,9 +126,10 @@ class ScaledDotProductAttention(Layer):
         softmax_out = K.softmax(matmul)  # SoftMax层
         return K.batch_dot(softmax_out, values) # 最后乘V
     def get_config(self):
-        config = super().get_config().copy()
+        config = super().get_config()
         config.update({
             'masking_num': self.masking_num,
+            "mode" : self.mode
         })
         return config
     def compute_output_shape(self, input_shape):
@@ -178,10 +181,12 @@ class MultiHeadAttention(Layer):
         outputs = tf.concat(tf.split(att_out, self.heads, axis=0), axis=2)
         return outputs
     def get_config(self):
-        config = super().get_config().copy()
+        config = super().get_config()
         config.update({
             'head_dim': self.head_dim,
             'heads': self.heads,
+            "mode" : self.mode,
+            "trainable" : self.trainable
         })
         return config
     def compute_output_shape(self, input_shape):
