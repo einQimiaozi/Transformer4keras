@@ -130,3 +130,7 @@
             batch_size=batch_size, epochs=epochs, validation_split=0.2)
   ```
   
+  
+  ## 特别说明
+  
+  input应为3d张量(batch_size,maxlen,wordembedding)，keras会自动处理batch_size这个维度，所以代码中看起来像是2d张量，但实际使用时请不要将3d张量进行reshape
